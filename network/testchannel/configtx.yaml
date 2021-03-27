@@ -1,0 +1,92 @@
+################################################################################
+#
+#   ORGANIZATIONS
+#
+#   This section defines the organizational identities that can be referenced
+#   in the configuration profiles.
+#
+################################################################################
+Organizations:
+    # NAUKMA defines an MSP using the sampleconfig. It should never be used
+    # in production but may be used as a template for other definitions.
+    - &NAUKMA
+      # Name is the key by which this org will be referenced in channel
+      # configuration transactions.
+      # Name can include alphanumeric characters as well as dots and dashes.
+      Name: NAUKMA
+
+      # ID is the key by which this org's MSP definition will be referenced.
+      # ID can include alphanumeric characters as well as dots and dashes.
+      ID: NAUKMA
+
+      # MSPDir is the filesystem path which contains the MSP configuration.
+      MSPDir: msp
+
+      # Policies defines the set of policies at this level of the config tree
+      # For organization policies, their canonical path is usually
+      #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+      Policies: &NAUKMAPolicies
+          Readers:
+              Type: Signature
+              Rule: "OR('NAUKMA.client', 'NAUKMA.admin', 'NAUKMA.peer')"
+          Writers:
+              Type: Signature
+              Rule: "OR('NAUKMA.client', 'NAUKMA.admin', 'NAUKMA.peer')"
+          Admins:
+              Type: Signature
+              Rule: "OR('NAUKMA.admin')"
+
+      # OrdererEndpoints is a list of all orderers this org runs which clients
+      # and peers may to connect to to push transactions and receive blocks respectively.
+      OrdererEndpoints:
+          - "0.0.0.0:7050"
+
+      # AnchorPeers defines the location of peers which can be used for
+      # cross-org gossip communication. Note, this value is only encoded in
+      # the genesis block in the Application section context.
+      AnchorPeers:
+
+################################################################################
+#
+#   SECTION: Application
+#
+#   - This section defines the values to encode into a config transaction or
+#   genesis block for application related parameters
+#
+################################################################################
+Application: &ApplicationDefaults
+    # Organizations is the list of orgs which are defined as participants on
+    # the application side of the network
+    Policies: &ApplicationDefaultPolicies
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+    Organizations:
+
+Capabilities:
+    Application: &ApplicationCapabilities
+        V1_4_2: true
+
+################################################################################
+#
+#   Profile
+#
+#   - Different configuration profiles may be encoded here to be specified
+#   as parameters to the configtxgen tool
+#
+################################################################################
+Profiles:
+    TestChannel:
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *NAUKMA
+            Capabilities:
+                <<: *ApplicationCapabilities
