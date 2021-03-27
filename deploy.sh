@@ -11,7 +11,7 @@ docker-compose up -d
 cd ../
 
 echo -----Enroll admin msp
-../bin/fabric-ca-client enroll -u http://admin:password@0.0.0.0:7054
+sleep 2 && ../bin/fabric-ca-client enroll -u http://admin:password@0.0.0.0:7054
 
 echo -----Backup admin msp
 mkdir -p ./admin
@@ -71,12 +71,12 @@ sleep 2 && echo ----Create the channel
 cd ../
 export FABRIC_CFG_PATH=$(pwd)/peer/data
 export CORE_PEER_MSPCONFIGPATH=~/.fabric-ca-client/msp
-peer channel create -c testchnaukmaannel --file ./naukma_create.pb --orderer 0.0.0.0:7050 
+../bin/peer channel create -c naukma --file ./testchannel/naukma_create.pb --orderer 0.0.0.0:7050 
 sleep 2 && echo ----Join the existing nodes to the channel 
 
 ../bin/peer channel join --orderer 172.28.0.5:7050 --blockpath ./naukma.block
 
-sleep 2 && echo ----Install chaincode on the node &&
+sleep 2 && echo ----Install chaincode on the node
 
 
 
