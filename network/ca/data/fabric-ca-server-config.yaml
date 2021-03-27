@@ -245,6 +245,7 @@ ldap:
 affiliations:
   naukma:
     - teacher
+    - student
 
 #############################################################################
 #  Signing section
