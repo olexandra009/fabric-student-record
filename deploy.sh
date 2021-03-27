@@ -9,5 +9,5 @@ docker-compose up -d
 echo -----Enroll admin msp
 sudo ../../bin/fabric-ca-client enroll -u http://admin:password@0.0.0.0:7054 -H ./data
 echo -----Backup admin msp
-mkdir -p ./admin/msp
-cp -r ./data/msp ./admin/
+mkdir -p ./admin
+sudo cp -r ./data/msp ./admin/
