@@ -1,85 +1,46 @@
-#!/bin/bash
-docker network rm fabric
-docker network create --driver=bridge fabric
-
-echo -----Installing Binaries for Fabric
 ./scripts/bootstrap.sh
+cd network
+../bin/cryptogen generate --config=./crypto-config.yaml
+export FABRIC_CFG_PATH=$PWD
+export CHANNEL_NAME=testchannel
+../bin/configtxgen -profile OrdererGenesis -channelID byfn-sys-channel -outputBlock ./channel-artifacts/genesis.block
+../bin/configtxgen -profile Channel -outputCreateChannelTx ./channel-artifacts/channel.tx -channelID $CHANNEL_NAME
+../bin/configtxgen -profile Channel -outputAnchorPeersUpdate ./channel-artifacts/Org1MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org1MSP
 
-echo -----Run Fabric CA Server
-cd ./network/ca
-docker-compose up -d
-cd ../
+docker-compose -f docker-compose.yaml up -d
+docker exec -it cli bash
+#Login as peer0 in org1
+export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
 
-echo -----Enroll admin msp
-sleep 2 && ../bin/fabric-ca-client enroll -u http://admin:password@0.0.0.0:7054
+export CHANNEL_NAME=testchannel
 
-echo -----Backup admin msp
-mkdir -p ./admin
-cp -r ~/.fabric-ca-client/msp ./admin/
+peer channel create -o orderer.example.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/channel.tx --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
 
+peer channel join -b testchannel.block
 
-echo -----Create node account
-../bin/fabric-ca-client register --id.name peer1 --id.affiliation naukma.teacher --id.secret passwd --id.type peer
+#Install chaincode
+#peer chaincode install -n recordcontract -v 1.1 -l node -p /opt/gopath/src/github.com/chaincode
+#
+##Initiate chaincode
+#peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n recordcontract -l node -v 1.1 -c '{"Args":[]}'
+#
+#peer chaincode invoke -o orderer.example.com:7050 --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n recordcontract --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt -c '{"Args":["createStudentRecord", "test@ukma.edu.ua", "John Dou"]}'
+#peer chaincode invoke -o orderer.example.com:7050 --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n recordcontract --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt -c '{"Args":["createSubjectToStudentRecord", "test@ukma.edu.ua", "1", "TestSubject"]}'
+#peer chaincode invoke -o orderer.example.com:7050 --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n recordcontract --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt -c '{"Args":["createGrageToRecord", "test@ukma.edu.ua", "1", "TestSubject", "test", "5"]}'
 
-echo -----Enroll node msp
-../bin/fabric-ca-client enroll -u http://peer1:passwd@0.0.0.0:7054
-cp -r ~/.fabric-ca-client/msp ./peer/data/
-mkdir -p ./peer/data/msp/admincerts
-cp ./admin/msp/signcerts/cert.pem ./peer/data/msp/admincerts/
-cp ./msp/config.yaml ./peer/data/msp/
+#peer chaincode query -C $CHANNEL_NAME -n recordcontract -c '{"Args":["createStudentRecord", "test@ukma.edu.ua", "John Dou"]}'
+#peer chaincode query -C $CHANNEL_NAME -n recordcontract -c '{"Args":["createSubjectToStudentRecord", "test@ukma.edu.ua", "1", "TestSubject"]}'
+#peer chaincode query -C $CHANNEL_NAME -n recordcontract -c '{"Args":["createGrageToRecord", "test@ukma.edu.ua", "1", "TestSubject", "test", "5"]}'
 
-echo -----Run Fabric Peer Node
-cd ./peer
-docker-compose up -d
-cd ../../
+#peer chaincode query -C $CHANNEL_NAME -n recordcontract -c '{"Args":["getStudentAllGradesFromRecord", "test@ukma.edu.ua"]}'
+#peer chaincode query -C $CHANNEL_NAME -n recordcontract -c '{"Args":["getStudentSemesterGradesFromRecord", "test@ukma.edu.ua", "1"]}'
 
-echo ----Update admin msp
-rm -rf ~/.fabric-ca-client/msp
-cp -r ./network/admin/msp/ ~/.fabric-ca-client/
-
-echo -----Create node account
-cd ./network
-../bin/fabric-ca-client register --id.name orderer --id.affiliation naukma.teacher --id.secret passwd --id.type peer
-
-echo -----Enroll node msp
-../bin/fabric-ca-client enroll -u http://orderer:passwd@0.0.0.0:7054
-cp -r ~/.fabric-ca-client/msp ./orderer/data/
-mkdir -p ./orderer/data/msp/admincerts
-cp ./admin/msp/signcerts/cert.pem ./orderer/data/msp/admincerts/
-cp ./msp/config.yaml ./orderer/data/msp/
-
-echo -----Run Fabric Peer Node
-cd ./orderer
-docker-compose up -d
-cd ../../
-
-echo ----Update admin msp
-rm -rf ~/.fabric-ca-client/msp
-cp -r ./network/admin/msp/ ~/.fabric-ca-client/
-
-echo ----Change admin MSP
-mkdir -p ~/.fabric-ca-client/msp/admincerts
-cd network/
-cp ./admin/msp/signcerts/cert.pem ~/.fabric-ca-client/msp/admincerts
-cp -r ./admin/msp ./testchannel
-
-cd testchannel
-
-echo ----Build the channel creation transaction 
-../../bin/configtxgen -asOrg NAUKMA -channelID naukma -configPath $(pwd) -outputCreateChannelTx ./naukma_create.pb -profile TestChannel 
-sleep 2 && echo ----Create the channel 
-cd ../
-export FABRIC_CFG_PATH=$(pwd)/peer/data
-export CORE_PEER_MSPCONFIGPATH=~/.fabric-ca-client/msp
-../bin/peer channel create -c naukma --file ./testchannel/naukma_create.pb --orderer 0.0.0.0:7050 
-sleep 2 && echo ----Join the existing nodes to the channel 
-
-../bin/peer channel join --orderer 172.28.0.5:7050 --blockpath ./naukma.block
-
-sleep 2 && echo ----Install chaincode on the node
-
-
-
-
+##Update chaincode - Change version
+#peer chaincode install -n recordcontract -v 1.4 -l node -p /opt/gopath/src/github.com/chaincode
+#
+#peer chaincode upgrade -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n recordcontract -l node -v 1.2 -c '{"Args":[]}'
 
 
