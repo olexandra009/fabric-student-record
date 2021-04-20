@@ -1,0 +1,22 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+volumes:
+  ca.org1.example.com:
+
+networks:
+  byfn:
+
+services:
+
+  ca.org1.example.com:
+    extends:
+      file:   base/docker-compose-ca.yaml
+      service: ca.org1.example.com
+    container_name: ca.org1.example.com
+    networks:
+      - byfn

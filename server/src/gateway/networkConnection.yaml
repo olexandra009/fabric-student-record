@@ -39,11 +39,11 @@ channels:
     # operational decisions to share loads from applications among the orderers.  The values must
     # be "names" of orgs defined under "organizations/peers"
     orderers:
-      - orderer
+      - orderer.example.com
 
     # Required. list of peers from participating orgs
     peers:
-      peer1:
+      peer0.org1.example.com:
         # [Optional]. will this peer be sent transaction proposals for endorsement? The peer must
         # have the chaincode installed. The app can also use this property to decide which peers
         # to send the chaincode install request. Default: true
@@ -67,11 +67,10 @@ channels:
 # list of participating organizations in this network
 #
 organizations:
-  NAUKMA:
-    mspid: NAUKMA
-
+  Org1MSP:
+    mspid: Org1MSP
     peers:
-      - peer1
+      - peer0.org1.example.com
 
 #
 # List of orderers to send transaction and channel create/update requests to. For the time
@@ -79,25 +78,59 @@ organizations:
 # SDK is implementation specific. Consult each SDK's documentation for its handling of orderers.
 #
 orderers:
-  orderer_n1:
-    url: grpc://172.28.0.5:7050
-
+  orderer.example.com:
+    url: grpcs://0.0.0.0:7050
     # these are standard properties defined by the gRPC library
     # they will be passed in as-is to gRPC client constructor
+    tlsCACerts:
+      pem: |
+        -----BEGIN CERTIFICATE-----
+        MIICQzCCAeqgAwIBAgIRAN9QroAEy8D21TA64K24AkQwCgYIKoZIzj0EAwIwbDEL
+        MAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDVNhbiBG
+        cmFuY2lzY28xFDASBgNVBAoTC2V4YW1wbGUuY29tMRowGAYDVQQDExF0bHNjYS5l
+        eGFtcGxlLmNvbTAeFw0yMTA0MjAxMjU4MDBaFw0zMTA0MTgxMjU4MDBaMGwxCzAJ
+        BgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1TYW4gRnJh
+        bmNpc2NvMRQwEgYDVQQKEwtleGFtcGxlLmNvbTEaMBgGA1UEAxMRdGxzY2EuZXhh
+        bXBsZS5jb20wWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAT8ajHUD89h/meGM5sm
+        PlVAPeoyEFzcy10Zl4h1q/z13NaK8ts5Iyn70X8n5F+llwS+lTAYLmbnXV3/crAv
+        viKYo20wazAOBgNVHQ8BAf8EBAMCAaYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsG
+        AQUFBwMBMA8GA1UdEwEB/wQFMAMBAf8wKQYDVR0OBCIEIPMqtt0kLiY65/e2bkM0
+        8iH5JiMEtL6iZfmGWMcyhZSNMAoGCCqGSM49BAMCA0cAMEQCIETNcKrQblW6cRsz
+        eD8uokUsbrZUA/ZYp40logfKZ5ufAiBvT4xOnZhWthQlYKAE+s8QzOVrOraC5xJF
+        bJliuSnqQA==
+        -----END CERTIFICATE-----
+
     grpcOptions:
-      ssl-target-name-override: orderer_n1
+      ssl-target-name-override: orderer.example.com
 
 #
 # List of peers to send various requests to, including endorsement, query
 # and event listener registration.
 #
 peers:
-  peer1:
+  peer0.org1.example.com:
     # this URL is used to send endorsement and query requests
-    url: grpc://172.28.0.4:7051
+    url: grpcs://0.0.0.0:7051
+    "tlsCACerts":
+      "pem": |
+        -----BEGIN CERTIFICATE-----
+        MIICVzCCAf6gAwIBAgIRAMe4IOQt4X40+VBawzIc68IwCgYIKoZIzj0EAwIwdjEL
+        MAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDVNhbiBG
+        cmFuY2lzY28xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHzAdBgNVBAMTFnRs
+        c2NhLm9yZzEuZXhhbXBsZS5jb20wHhcNMjEwNDIwMTI1ODAwWhcNMzEwNDE4MTI1
+        ODAwWjB2MQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UE
+        BxMNU2FuIEZyYW5jaXNjbzEZMBcGA1UEChMQb3JnMS5leGFtcGxlLmNvbTEfMB0G
+        A1UEAxMWdGxzY2Eub3JnMS5leGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49
+        AwEHA0IABFcVI1UsZTxWzfq4qculbB83fBGRfstQgs+5BQJ6DsjFS5Y9q/iycePq
+        KLVUrRUDmC8jp1ZZUzHxs78bHiMVXI+jbTBrMA4GA1UdDwEB/wQEAwIBpjAdBgNV
+        HSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwEwDwYDVR0TAQH/BAUwAwEB/zApBgNV
+        HQ4EIgQgaou6Sob2r8cZsCuI/K8RcwU5ufDi7TjmUVoRDgOz8LwwCgYIKoZIzj0E
+        AwIDRwAwRAIgEMYkYD5lnUDWGQ3LSNs31ohMq/IA97hi3b2KvyRre8kCICtPCQGQ
+        9IgO7dGXVtVK45mClr/3Y02WU/16MbGLuhOV
+        -----END CERTIFICATE-----
 
     grpcOptions:
-      ssl-target-name-override: peer1
+      ssl-target-name-override: peer0.org1.example.com
       request-timeout: 120001
 
 # Fabric-CA is a special kind of Certificate Authority provided by Hyperledger Fabric which allows
@@ -106,7 +139,7 @@ peers:
 #
 certificateAuthorities:
   ca-org1:
-    url: http://172.28.0.3:7054
+    url: http://0.0.0.0:7054
     # the properties specified under this object are passed to the 'http' client verbatim when
     # making the request to the Fabric-CA server
     httpOptions:
